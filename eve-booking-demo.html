@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EVE Diagnostics — Booking</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f7fb;color:#172033}
+    button,input,select{font:inherit}button{cursor:pointer;border:0}.app{min-height:100vh}
+    .nav{height:70px;background:#fff;border-bottom:1px solid #e7ebf2;display:flex;align-items:center;justify-content:space-between;padding:0 6%;position:sticky;top:0;z-index:10}
+    .brand{font-size:23px;font-weight:800;color:#1769e0}.brand span{color:#172033}.navlinks{display:flex;gap:24px}.navlinks a{color:#5c6678;text-decoration:none;font-size:14px;cursor:pointer}.navlinks a:hover{color:#1769e0}
+    .navright{display:flex;gap:10px;align-items:center}.btn{padding:10px 17px;border-radius:9px;font-weight:650}.primary{background:#1769e0;color:#fff}.secondary{background:#eef4ff;color:#1769e0}.danger{background:#fff0f0;color:#c83b3b}
+    .hero{padding:55px 6% 70px;background:linear-gradient(135deg,#eaf3ff,#f8fbff)}.hero-inner{max-width:1120px;margin:auto}.eyebrow{color:#1769e0;font-weight:750;font-size:13px;text-transform:uppercase;letter-spacing:1px}
+    h1{font-size:44px;line-height:1.1;margin:12px 0 14px;max-width:700px}.hero p{color:#5d687a;max-width:650px;font-size:17px}
+    .search{margin-top:30px;background:#fff;border:1px solid #e1e7f0;padding:12px;border-radius:14px;display:grid;grid-template-columns:1.3fr 1fr auto;gap:10px;box-shadow:0 12px 35px #163b6b12}.field{padding:13px;border:1px solid #dce2eb;border-radius:9px;outline:none}.field:focus{border-color:#1769e0}
+    .container{max-width:1120px;margin:0 auto;padding:35px 20px 60px}.sectionhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.sectionhead h2{margin:0;font-size:23px}
+    .status{font-size:12px;padding:7px 10px;border-radius:20px;background:#e9f8ef;color:#19733c}.status.off{background:#fff0f0;color:#b33131}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:20px;box-shadow:0 4px 15px #12233b08}.card h3{margin:0 0 7px;font-size:18px}.muted{color:#697588;font-size:14px}.tag{display:inline-block;background:#f0f5ff;color:#3569b8;padding:5px 8px;border-radius:7px;font-size:12px;margin:6px 5px 0 0}.price{font-weight:750;font-size:17px;margin:15px 0}
+    .booking-list{display:grid;gap:12px}.booking{background:#fff;border:1px solid #e3e8f0;border-radius:12px;padding:17px;display:flex;justify-content:space-between;align-items:center}.badge{font-size:12px;padding:5px 9px;border-radius:20px;background:#edf7ef;color:#277443}
+    .empty{text-align:center;padding:35px;background:#fff;border:1px dashed #cfd7e4;border-radius:12px;color:#6b7687}.hidden{display:none!important}
+    .modal{position:fixed;inset:0;background:#0b142466;display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}.modalbox{background:#fff;border-radius:16px;padding:25px;width:min(460px,100%);max-height:90vh;overflow:auto}.modalhead{display:flex;justify-content:space-between;align-items:center}.modalhead h2{margin:0}.close{background:none;font-size:25px;color:#667085}.form{display:grid;gap:12px;margin-top:18px}.form label{font-size:13px;font-weight:650}.form input,.form select{width:100%;padding:12px;border:1px solid #dce2eb;border-radius:8px}.message{font-size:13px;padding:10px;border-radius:8px;background:#f3f6fa;color:#526074}
+    .footer{padding:25px 6%;text-align:center;color:#7a8494;font-size:13px}
+    @media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.search{grid-template-columns:1fr}.navlinks{display:none}}@media(max-width:560px){h1{font-size:34px}.grid{grid-template-columns:1fr}.nav{padding:0 4%}.navright .secondary{display:none}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="brand">EVE<span> Diagnostics</span></div>
+    <div class="navlinks"><a onclick="showSection('centres')">Centres</a><a onclick="showSection('tests')">Tests</a><a onclick="showSection('bookings')">My Bookings</a></div>
+    <div class="navright"><span id="userLabel" class="muted"></span><button class="btn secondary" id="loginBtn" onclick="openAuth()">Login</button><button class="btn primary" id="logoutBtn" onclick="logout()" style="display:none">Logout</button></div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Simple • Fast • Secure</div>
+      <h1>Book your diagnostic test easily.</h1>
+      <p>Find diagnostic centres, compare available tests, choose an appointment and manage your bookings from one place.</p>
+      <div class="search">
+        <input id="searchTest" class="field" placeholder="Search by test name, e.g. CBC" />
+        <input id="searchLocation" class="field" placeholder="Location, e.g. Ahmedabad" />
+        <button class="btn primary" onclick="loadCentres()">Search Centres</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <div id="centresSection">
+      <div class="sectionhead"><h2>Diagnostic Centres</h2><span id="apiStatus" class="status">Checking API…</span></div>
+      <div id="centreGrid" class="grid"><div class="empty">Loading centres…</div></div>
+    </div>
+
+    <div id="testsSection" class="hidden" style="margin-top:35px">
+      <div class="sectionhead"><h2>Available Tests</h2></div>
+      <div id="testGrid" class="grid"><div class="empty">Loading tests…</div></div>
+    </div>
+
+    <div id="bookingsSection" class="hidden" style="margin-top:35px">
+      <div class="sectionhead"><h2>My Bookings</h2><button class="btn secondary" onclick="loadBookings()">Refresh</button></div>
+      <div id="bookingList" class="booking-list"><div class="empty">Login to view your bookings.</div></div>
+    </div>
+  </main>
+  <footer class="footer">EVE Diagnostics Booking Service</footer>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modalbox">
+    <div class="modalhead"><h2 id="modalTitle">Login</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:8000";
+let token = localStorage.getItem("eve_token");
+let centres = [], tests = [];
+
+async function api(path, options={}) {
+  const headers = {"Content-Type":"application/json", ...(options.headers||{})};
+  if (token) headers.Authorization = "Bearer " + token;
+  const r = await fetch(API + path, {...options, headers});
+  const text = await r.text();
+  let data; try { data = text ? JSON.parse(text) : {}; } catch { data = {detail:text}; }
+  if (!r.ok) throw new Error(data.detail || "Request failed");
+  return data;
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
+async function health(){
+  try { await api("/health"); apiStatus.textContent="API Online"; apiStatus.className="status"; }
+  catch { apiStatus.textContent="API Offline"; apiStatus.className="status off"; }
+}
+async function loadCentres(){
+  const loc=encodeURIComponent(document.getElementById("searchLocation").value.trim());
+  const test=encodeURIComponent(document.getElementById("searchTest").value.trim());
+  try {
+    centres=await api(`/centres/?limit=100${loc?"&location="+loc:""}${test?"&test="+test:""}`);
+    renderCentres();
+  } catch(e){ centreGrid.innerHTML=`<div class="empty">Could not load centres: ${esc(e.message)}</div>`; }
+}
+function renderCentres(){
+  centreGrid.innerHTML=centres.length?centres.map(c=>{
+    const offerings=(c.offerings||[]).map(o=>`<span class="tag">${esc(o.test?.name)} · ₹${esc(o.price)}</span>`).join("");
+    const first=(c.offerings||[])[0];
+    return `<article class="card"><h3>${esc(c.name)}</h3><div class="muted">📍 ${esc(c.location)}</div><div style="margin:10px 0">${offerings||'<span class="muted">No tests listed</span>'}</div>${first?`<div class="price">From ₹${esc(first.price)}</div><button class="btn primary" onclick="openBooking(${c.id})">Book a Test</button>`:""}</article>`;
+  }).join(""):'<div class="empty">No centres found. Try another search.</div>';
+}
+async function loadTests(){
+  try{tests=await api("/tests/");testGrid.innerHTML=tests.length?tests.map(t=>`<article class="card"><h3>${esc(t.name)}</h3><p class="muted">${esc(t.description||"Diagnostic test")}</p></article>`).join(""):'<div class="empty">No tests available.</div>'}
+  catch(e){testGrid.innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+}
+function openBooking(centreId){
+  if(!token){openAuth("Please login before booking.");return;}
+  const c=centres.find(x=>x.id===centreId);
+  const options=(c?.offerings||[]).map(o=>`<option value="${o.test.id}">${esc(o.test.name)} — ₹${esc(o.price)}</option>`).join("");
+  modalTitle.textContent="Book Appointment";
+  modalBody.innerHTML=`<p class="muted">${esc(c.name)} · ${esc(c.location)}</p><form class="form" onsubmit="createBooking(event,${centreId})"><label>Diagnostic Test<select id="bookTest" required>${options}</select></label><label>Appointment Date & Time<input id="bookDate" type="datetime-local" required></label><button class="btn primary">Confirm Booking</button><div id="formMsg" class="message"></div></form>`;
+  modal.classList.remove("hidden");
+}
+async function createBooking(e,centreId){
+  e.preventDefault(); formMsg.textContent="Creating booking…";
+  try{
+    const b=await api("/bookings/",{
+      method:"POST",
+      body:JSON.stringify({
+        centre_id:centreId,
+        test_id:Number(bookTest.value),
+        appointment_at:new Date(bookDate.value).toISOString()
+      })
+    });
+    openPayment(b);
+  }catch(err){formMsg.textContent=err.message}
+}
+
+function openPayment(booking){
+  modalTitle.textContent="Payment";
+  modalBody.innerHTML=`
+    <div class="message" style="margin-top:18px">
+      <strong>Booking #${esc(booking.id)} created</strong><br>
+      Your appointment has been reserved. Complete the simulated payment below.
+    </div>
+    <div class="form">
+      <label>Payment outcome
+        <select id="paymentOutcome">
+          <option value="SUCCESS">Successful</option>
+          <option value="FAILED">Failed</option>
+          <option value="PENDING">Pending</option>
+        </select>
+      </label>
+      <button class="btn primary" onclick="processPayment(${booking.id})">Process Payment</button>
+      <div id="paymentMsg" class="message"></div>
+    </div>`;
+}
+
+async function processPayment(bookingId){
+  paymentMsg.textContent="Processing payment…";
+  try{
+    const p=await api("/payments/",{
+      method:"POST",
+      body:JSON.stringify({
+        booking_id:bookingId,
+        outcome:paymentOutcome.value
+      })
+    });
+    const success=p.status==="SUCCESS";
+    paymentMsg.innerHTML=success
+      ? `<strong>✓ Payment Successful</strong><br>
+         Payment ID: ${esc(p.id)}<br>
+         Booking ID: ${esc(p.booking_id)}<br>
+         Amount: ₹${esc(p.amount)}<br>
+         Status: ${esc(p.status)}<br>
+         Provider Reference: ${esc(p.provider_reference)}`
+      : `<strong>Payment ${esc(p.status)}</strong><br>
+         Payment ID: ${esc(p.id)}<br>
+         Booking ID: ${esc(p.booking_id)}<br>
+         Amount: ₹${esc(p.amount)}<br>
+         Provider Reference: ${esc(p.provider_reference)}`;
+    if(success) paymentMsg.style.background="#e9f8ef";
+    setTimeout(()=>{closeModal();showSection("bookings");loadBookings()},1800);
+  }catch(err){paymentMsg.textContent=err.message}
+}
+
+async function loadBookings(){
+  bookingList.innerHTML='<div class="empty">Loading bookings…</div>';
+  if(!token){bookingList.innerHTML='<div class="empty">Login to view your bookings.</div>';return}
+  try{const bs=await api("/bookings/");bookingList.innerHTML=bs.length?bs.map(b=>`<div class="booking"><div><strong>Booking #${b.id}</strong><div class="muted">Centre #${b.centre_id} · Test #${b.test_id}<br>${new Date(b.appointment_at).toLocaleString()}</div></div><div><span class="badge">${esc(b.status)}</span>${!["CANCELLED","cancelled"].includes(b.status)?` <button class="btn danger" onclick="cancelBooking(${b.id})">Cancel</button>`:""}</div></div>`).join(""):'<div class="empty">No bookings yet.</div>'}
+  catch(e){bookingList.innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+}
+async function cancelBooking(id){if(!confirm("Cancel this booking?"))return;try{await api(`/bookings/${id}/cancel`,{method:"POST"});loadBookings()}catch(e){alert(e.message)}}
+
+function openAuth(note=""){
+  modalTitle.textContent="Welcome to EVE";
+  modalBody.innerHTML=`<div style="display:flex;gap:8px;margin-top:18px"><button id="loginTab" class="btn primary" onclick="authForm('login')">Login</button><button id="signupTab" class="btn secondary" onclick="authForm('signup')">Create Account</button></div><div id="authForm"></div>${note?`<div class="message" style="margin-top:12px">${esc(note)}</div>`:""}`;modal.classList.remove("hidden");authForm("login");
+}
+function authForm(mode){
+  const signup=mode==="signup";
+  document.getElementById("authForm").innerHTML=`<form class="form" onsubmit="submitAuth(event,'${mode}')">${signup?'<label>Full name<input id="fullName" required minlength="1"></label>':""}<label>Email<input id="email" type="email" required></label><label>Password<input id="password" type="password" required minlength="8"></label><button class="btn primary">${signup?"Create Account":"Login"}</button><div id="authMsg" class="message"></div></form>`;
+}
+async function submitAuth(e,mode){
+  e.preventDefault();authMsg.textContent="Please wait…";
+  try{
+    if(mode==="signup"){await api("/auth/signup",{method:"POST",body:JSON.stringify({email:email.value,full_name:fullName.value,password:password.value})});authMsg.textContent="Account created. You can now log in.";return}
+    const d=await api("/auth/login",{method:"POST",body:JSON.stringify({email:email.value,password:password.value})});token=d.access_token;localStorage.setItem("eve_token",token);await updateUser();closeModal();showSection("centres");
+  }catch(err){authMsg.textContent=err.message}
+}
+async function updateUser(){
+  if(!token){loginBtn.style.display="";logoutBtn.style.display="none";userLabel.textContent="";return}
+  try{const u=await api("/auth/me");userLabel.textContent="Hi, "+u.full_name;loginBtn.style.display="none";logoutBtn.style.display="";}catch{logout()}
+}
+function logout(){token=null;localStorage.removeItem("eve_token");updateUser();showSection("centres")}
+function closeModal(){modal.classList.add("hidden")}
+function showSection(s){
+  centresSection.classList.toggle("hidden",s!=="centres");testsSection.classList.toggle("hidden",s!=="tests");bookingsSection.classList.toggle("hidden",s!=="bookings");
+  if(s==="tests")loadTests();if(s==="bookings")loadBookings();window.scrollTo({top:300,behavior:"smooth"});
+}
+health();loadCentres();updateUser();
+</script>
+</body>
+</html>
