@@ -893,6 +893,19 @@ The intended workflow is:
                 └───────────────┘
 ```
 
+## 📸 Application Screenshots
+
+### 🔐 Login Page
+
+![EVE Diagnostic Booking - Login Page](screenshots/Login%20Page.png)
+
+### 📊 Dashboard
+
+![EVE Diagnostic Booking - Dashboard](screenshots/Dashboard.png)
+
+### 💳 Payment Page
+
+![EVE Diagnostic Booking - Payment Page](screenshots/Payment%20Page.png)
 
 ---
 
